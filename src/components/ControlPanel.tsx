@@ -1,14 +1,36 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { fetchCrypto } from '../redux/cryptoSlice';
 import { useAppDispatch } from '../redux/store';
+import Hint from './Hint';
+import { useSelector } from 'react-redux';
+import { RootState } from '../redux/store';
 
 const ControlPanel: React.FC = () => {
   const dispatch = useAppDispatch();
-  const [value, setValue] = useState('');
+  const { items } = useSelector((state: RootState) => state.crypto.names);
+  const addedCrypto = useSelector((state: RootState) => state.crypto.values.items);
+
+  const [value, setValue] = React.useState('');
+  const [isAdded, setIsAdded] = React.useState(false);
+  const [searchItems, setSearchItems] = React.useState<string[]>();
+
+  React.useEffect(() => {
+    addedCrypto.forEach((el) =>
+      value.toLocaleUpperCase() === el.name ? setIsAdded(true) : setIsAdded(false),
+    );
+
+    setSearchItems(
+      items.filter((item) => item.toLocaleLowerCase().includes(value.toLocaleLowerCase())),
+    );
+  }, [value]);
 
   const getCrypto = () => {
     dispatch(fetchCrypto(value));
     setValue('');
+  };
+
+  const onChangeHadle = (e: React.FormEvent<HTMLInputElement>) => {
+    setValue(e.currentTarget.value);
   };
 
   return (
@@ -22,7 +44,7 @@ const ControlPanel: React.FC = () => {
             <input
               onKeyDown={(e) => (e.key === 'Enter' ? getCrypto() : '')}
               value={value}
-              onChange={(e) => setValue(e.target.value)}
+              onChange={(e) => onChangeHadle(e)}
               type="text"
               name="wallet"
               id="wallet"
@@ -30,18 +52,28 @@ const ControlPanel: React.FC = () => {
               placeholder="Например DOGE"
             />
           </div>
-          <div className="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap">
-            <span className="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer">
-              BTC
-            </span>
-          </div>
-          <div className="text-sm text-red-600">Такой тикер уже добавлен</div>
+          {value.length ? (
+            <div className="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap">
+              {searchItems &&
+                searchItems
+                  .slice(0, 4)
+                  .map((el, index) => <Hint setValue={setValue} name={el} key={index} />)}
+            </div>
+          ) : (
+            ''
+          )}
+          {isAdded && <div className="text-sm text-red-600">Такой тикер уже добавлен</div>}
         </div>
       </div>
       <button
+        disabled={isAdded}
         onClick={() => getCrypto()}
         type="button"
-        className="my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+        className={
+          isAdded
+            ? 'btn_disabled my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500'
+            : 'my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500'
+        }>
         <svg
           className="-ml-0.5 mr-2 h-6 w-6"
           xmlns="http://www.w3.org/2000/svg"

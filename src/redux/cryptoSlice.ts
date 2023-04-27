@@ -9,44 +9,42 @@ export enum Status {
   ERROR = 'error'
 }
 
-type NamesType = {
-  id: number
-  symbol: string
-  partner_symbol: string
-  data_available_from: number
-}
-
-type ItemType = {
+export type ItemType = {
   name: string
   price: number
 }
 
 interface InitialStateType {
   names: {
-    items: NamesType[]
+    items: string[]
     status: Status
   }
   values: {
     items: ItemType[]
     status: Status
-  }
+  }, 
+  chosenElemenet: null | number,
+  graph: number[]
 }
 
 export const fetchNames= createAsyncThunk(
   'crypto/fetchNames',
   async () => {
     const {data} = await axioss.get('https://min-api.cryptocompare.com/data/blockchain/list?api_key=9f87f81c83620862e348d58f61daee1a6c5b3f72c8cfb2e8cf126f5932cdefb7')
-    return data as NamesType[]
+    let convertedItems: string[] = [];
+    for (var key in data.Data) {
+      convertedItems.push(key);
+    }
+    return convertedItems;
   }
 )
 
 export const fetchCrypto = createAsyncThunk(
   'crypto/fetchCrypto',
   async (name: string) => {
-    const {data} = await axios.get(`/price?fsym=${name}&tsyms=USD`)
-    console.log(data)
+    const {data} = await axios.get(`/price?fsym=${name.toUpperCase()}&tsyms=USD`)
     const item = {
-      name,
+      name: name.toUpperCase(),
       price: data.USD
     }
     return item as ItemType
@@ -61,7 +59,9 @@ const initialState: InitialStateType = {
   values: {
     items: [],
     status: Status.LOADING
-  }
+  },
+  chosenElemenet: null,
+  graph: []
 }
 
 const cryptoSlice = createSlice({
@@ -71,13 +71,17 @@ const cryptoSlice = createSlice({
     deleteCrypto(state, action) {
       state.values.items = state.values.items.filter((el, index) => index !== action.payload)
     },
+    chooseElement(state, action) {
+      state.chosenElemenet = action.payload
+    },
+
   },
   extraReducers: (builder) => {
     builder.addCase(fetchNames.pending, (state) => {
       state.names.items = [];
       state.names.status = Status.LOADING;
     })
-    builder.addCase(fetchNames.fulfilled, (state, action: PayloadAction<NamesType[]>) => {
+    builder.addCase(fetchNames.fulfilled, (state, action: PayloadAction<string[]>) => {
       state.names.items = action.payload
       state.names.status = Status.LOADED;
     })
@@ -89,8 +93,16 @@ const cryptoSlice = createSlice({
       state.values.status = Status.LOADING;
     })
     builder.addCase(fetchCrypto.fulfilled, (state, action: PayloadAction<ItemType>) => {
-      state.values.items.push(action.payload)
+      const selectedItem = state.values.items.filter(el => el.name === action.payload.name)
+      if( selectedItem.length) {
+        state.values.items.push(action.payload)
+        state.graph.push(action.payload.price)
+      } else {
+        state.graph.push(action.payload.price)
+        selectedItem[0].price = action.payload.price
+      }  
       state.values.status = Status.LOADED;
+      
     })
     builder.addCase(fetchCrypto.rejected, (state) => {
       state.values.status = Status.ERROR;
@@ -98,6 +110,6 @@ const cryptoSlice = createSlice({
   },
 });
 
-export const { deleteCrypto } = cryptoSlice.actions;
+export const { deleteCrypto, chooseElement } = cryptoSlice.actions;
 
 export default cryptoSlice.reducer;

@@ -5,7 +5,7 @@ import CryptoCard from './CryptoCard';
 import { RootState } from '../redux/store';
 
 const CryptoCardsBlock: React.FC = () => {
-  const { items, status } = useSelector((state: RootState) => state.crypto.values);
+  const { items } = useSelector((state: RootState) => state.crypto.values);
 
   return (
     <>
