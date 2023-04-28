@@ -1,8 +1,9 @@
 import React from 'react';
 import { useAppDispatch } from '../redux/store';
-import { deleteCrypto, chooseElement } from '../redux/cryptoSlice';
+import { deleteCrypto, chooseElement, fetchCrypto } from '../redux/cryptoSlice';
 import { useSelector } from 'react-redux';
 import { RootState } from '../redux/store';
+import { useInterval } from 'usehooks-ts';
 
 type CryptoCardProps = {
   index: number;
@@ -17,8 +18,9 @@ const CryptoCard: React.FC<CryptoCardProps> = ({ name, price, index }) => {
   const chosenElemenet = useSelector((state: RootState) => state.crypto.chosenElemenet);
 
   const handleDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
+    e.stopPropagation();
     dispatch(deleteCrypto(index));
+    dispatch(chooseElement(null));
   };
 
   const handleChoose = () => {
@@ -32,6 +34,10 @@ const CryptoCard: React.FC<CryptoCardProps> = ({ name, price, index }) => {
       setIsChosen(false);
     }
   }, [chosenElemenet, index]);
+
+  useInterval(() => {
+    dispatch(fetchCrypto(name));
+  }, 5000);
 
   return (
     <div

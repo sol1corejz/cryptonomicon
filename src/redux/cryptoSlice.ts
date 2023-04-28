@@ -73,6 +73,7 @@ const cryptoSlice = createSlice({
     },
     chooseElement(state, action) {
       state.chosenElemenet = action.payload
+      state.graph = []
     },
 
   },
@@ -93,14 +94,15 @@ const cryptoSlice = createSlice({
       state.values.status = Status.LOADING;
     })
     builder.addCase(fetchCrypto.fulfilled, (state, action: PayloadAction<ItemType>) => {
-      const selectedItem = state.values.items.filter(el => el.name === action.payload.name)
-      if( selectedItem.length) {
-        state.values.items.push(action.payload)
-        state.graph.push(action.payload.price)
+      if(state.values.items.filter( el => el.name === action.payload.name).length){
+        if(state.chosenElemenet !==null && action.payload.name === state.values.items[state.chosenElemenet].name){
+          state.graph.push(action.payload.price);
+        } 
+        state.values.items.filter( el => el.name === action.payload.name)[0].price = action.payload.price;
       } else {
-        state.graph.push(action.payload.price)
-        selectedItem[0].price = action.payload.price
-      }  
+        state.values.items.push(action.payload);
+        state.graph.push(action.payload.price);
+      } 
       state.values.status = Status.LOADED;
       
     })

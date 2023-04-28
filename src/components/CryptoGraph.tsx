@@ -1,8 +1,8 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { RootState, useAppDispatch } from '../redux/store';
-import { ItemType, chooseElement, fetchCrypto } from '../redux/cryptoSlice';
-import { isVisible } from '@testing-library/user-event/dist/utils';
+import { chooseElement, fetchCrypto } from '../redux/cryptoSlice';
+import { useInterval } from 'usehooks-ts';
 
 const CryptoGraph: React.FC = () => {
   const chosenElemenet = useSelector((state: RootState) => state.crypto.chosenElemenet);
@@ -12,7 +12,11 @@ const CryptoGraph: React.FC = () => {
 
   const [isVisible, setIsVisible] = React.useState(false);
 
-  let bars = [];
+  const normalizeGraph = () => {
+    const maxValue = Math.max(...graph);
+    const minValue = Math.min(...graph);
+    return graph.map((price) => ((price - minValue) * 100) / (maxValue - minValue));
+  };
 
   let element = chosenElemenet !== null ? items[chosenElemenet] : { name: '', price: 0 };
 
@@ -24,13 +28,9 @@ const CryptoGraph: React.FC = () => {
     }
   }, [chosenElemenet]);
 
-  setInterval(() => {
-    if (element.name.length) dispatch(fetchCrypto(element.name));
-  }, 1000);
-
   React.useEffect(() => {
-    bars.push(element.price);
-  }, [graph]);
+    if (element.name.length) dispatch(fetchCrypto(element.name));
+  }, []);
 
   const onHadleClose = () => {
     setIsVisible(false);
@@ -43,8 +43,11 @@ const CryptoGraph: React.FC = () => {
         <>
           <h3 className="text-lg leading-6 font-medium text-gray-900 my-8">{element.name}</h3>
           <div className="flex items-end border-gray-600 border-b border-l h-64">
-            {graph.map((bar, index) => (
-              <div key={index} className="bg-purple-800 border w-10 h-24"></div>
+            {normalizeGraph().map((bar, index) => (
+              <div
+                style={{ height: `calc(10px + ${bar}%` }}
+                key={index}
+                className="bg-purple-800 border w-10 h-24"></div>
             ))}
           </div>
           <button onClick={() => onHadleClose()} type="button" className="absolute top-0 right-0">

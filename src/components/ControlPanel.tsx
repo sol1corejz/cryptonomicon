@@ -22,7 +22,7 @@ const ControlPanel: React.FC = () => {
     setSearchItems(
       items.filter((item) => item.toLocaleLowerCase().includes(value.toLocaleLowerCase())),
     );
-  }, [value]);
+  }, [addedCrypto, items, value]);
 
   const getCrypto = () => {
     dispatch(fetchCrypto(value));
@@ -31,6 +31,7 @@ const ControlPanel: React.FC = () => {
 
   const onChangeHadle = (e: React.FormEvent<HTMLInputElement>) => {
     setValue(e.currentTarget.value);
+    setIsAdded(false);
   };
 
   return (
